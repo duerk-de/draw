@@ -1,0 +1,174 @@
+#!/bin/bash
+
+
+function dbd()
+{
+	local now="$(date +%s)"
+	
+	/usr/bin/time -f "%E" dbdraw \
+		size=850x200 \
+		axis=$((now-60*60*24*8))_$((now))x-17_25 \
+		tolimits=3 gridspacing=8 gridtype=1 \
+		file=test_dbdraw.bmp \
+		linetype=1 sigma=1.6 \
+		data=/dibom/var/temp/temp-out.log xy=1x5 color=#4f9f00 newgraph \
+		data=/dibom/var/temp/temp-in.log xy=1x5 color=#9f3f00 newgraph \
+		data=/dibom/var/temp/temp-gnd.log xy=1x5 color=#002f7f newgraph \
+		data=/dibom/var/temp/temp-cel.log xy=1x5 color=#3f002f newgraph \
+		sigma=0.9 \
+		data=/dibom/var/temp/average-out-analysis.log xy=1x2 color=#1f4f00 newgraph \
+		data=/dibom/var/temp/average-out-analysis.log.1 xy=1x2 color=#1f4f00 newgraph \
+		linetype=3 \
+		data=/dibom/var/temp/analysis-out.log xy=3x4 color=#0f2700 newgraph \
+		data=/dibom/var/temp/analysis-out.log xy=5x6 color=#0f2700 newgraph \
+		data=/dibom/var/temp/analysis-in.log xy=3x4 color=#270000 newgraph \
+		data=/dibom/var/temp/analysis-in.log xy=5x6 color=#270000 newgraph \
+		data=/dibom/var/temp/analysis-gnd.log xy=5x6 color=#001f3f newgraph \
+		linetype=1 sigma=7 \
+		"data=calc=13.025-10.88101*sin((x+6471527.88462)/(60*60*24*365.2422/360))" \
+		color=#1f0700 newgraph sigma=4 \
+		"data=calc=5.60833-8.40572*sin((x+5915769.94103)/(60*60*24*365.2422/360))" \
+		color=#000f27
+}
+
+
+function args()
+{
+	cat <<'EOF'
+
+imgx = 850
+imgy = 200
+border = 4
+
+# monday, before new year
+year2025start = 1735516800
+yearstart = year2025start - timezoneof now * hours
+
+xmin  = - yearstart + now - 8days
+xmax  = - yearstart + now
+ymin  = -17
+ymax  = 25
+
+gridl = 0.5
+gridxtype = date
+gridx  = 2hours
+gridy  = 2
+grid
+
+backward = true
+bailout = true
+
+type = points
+plotx : 1.6xpxls
+ploty : 1.6ypxls
+datax : col1 - yearstart
+datay : col5
+
+data : /dibom/var/temp/temp-out.log
+lum  : 0.03
+sat  : 3
+hue  : 120
+plot
+
+data : /dibom/var/temp/temp-in.log
+lum  : 0.02
+sat  : 3
+hue  : 10
+plot
+
+data : /dibom/var/temp/temp-gnd.log
+lum  : 0.02
+sat  : 3
+hue  : 230
+plot
+
+data : /dibom/var/temp/temp-cel.log
+lum  : 0.007
+sat  : 3
+hue  : 310
+plot
+
+type = spline
+plotx : 0.9xpxls
+ploty : 0.9ypxls
+
+data : /dibom/var/temp/analysis-out.log
+
+backward = false
+bailout = true
+
+lum  : 0.05
+sat  : 3
+hue  : 100
+
+datax : col3 - yearstart
+datay : col4
+plot
+
+datax : col5 - yearstart
+datay : col6
+plot
+
+data : /dibom/var/temp/analysis-in.log
+
+lum  : 0.05
+sat  : 3
+hue  : 0
+
+datax : col3 - yearstart
+datay : col4
+plot
+
+datax : col5 - yearstart
+datay : col6
+plot
+
+data : /dibom/var/temp/analysis-gnd.log
+
+lum  : 0.05
+sat  : 3
+hue  : 220
+
+datax : col5 - yearstart
+datay : col6
+plot
+
+data : /dibom/var/temp/average-out-analysis.log
+data : /dibom/var/temp/average-out-analysis.log.1
+
+backward = true
+bailout = true
+
+datax : col1 - yearstart
+datay : col2
+lum  : 0.5
+sat  : 3
+hue  : 50
+plot
+
+daysperyear = 365 + 1/4 - 1/100 + 1/400
+
+plotx : 5xpxls
+ploty : 5ypxls
+
+lum  : 0.01
+sat  : 3
+hue  : 5
+datay : 13.025-10.88101*sin[[[col1-yearstart]+6471527.88462]/[daysperyear*days/360]]
+plot
+
+lum  : 0.015
+sat  : 3
+hue  : 230
+datay : 5.60833-8.40572*sin[[[col1-yearstart]+5915769.94103]/[daysperyear*days/360]]
+plot
+
+out   : test_draw.bmp
+
+EOF
+
+}
+
+args | xargs -d \\n /usr/bin/time -f "%E" "./draw-arm"
+dbd
+

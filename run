@@ -1,0 +1,108 @@
+#!/bin/bash
+
+function args()
+{
+	cat <<'EOF'
+
+
+imgx = 400*2
+imgy = 300*2
+
+# wednesday, start of new year
+year2025start = 1735689600
+# monday, before new year
+# year2025start = 1735516800
+yearstart = year2025start
+
+xmin  = - yearstart + now - 26weeks
+xmax  = - yearstart + now
+ymin  = 0
+ymax  = 7000kilo
+
+gridx  = 1weeks
+gridy  = 200kilo
+grid
+
+minpx = 1.2xpxls
+minpy = 1.2ypxls
+
+data : /dibom/var/log/ehz/ehz.analyzer.tmp0.txt
+avg  = 4weeks/1days
+step = avg/2
+type = spline
+bailout = true
+
+daysperyear = 365 + 1/4 - 1/100 + 1/400
+yscale = squareroot[avg] * 3 / daysperyear
+
+plotx : minpx
+ploty : [minpy] maximum [var4/yscale/10]
+lum   : 0.35
+sat   : 3
+hue   : 0
+datax : col1 - yearstart
+datay : col4 * daysperyear
+plot
+
+plotx : 1days
+ploty : [minpy] maximum [[var4+var2]/yscale]
+lum   : 0.13
+sat   : 3
+hue   : 100
+datax : col1 - yearstart
+datay : [col4-col2] * daysperyear
+plot
+
+plotx : 1days
+ploty : [minpy] maximum [var2/2yscale]
+lum   : 0.17
+sat   : 3
+hue   : 210
+datax : col1 - yearstart
+datay : col2 * daysperyear
+plot
+
+plotx : 1days
+ploty : [minpy] maximum [var3/2yscale]
+lum   : 0.08
+sat   : 3
+hue   : 330
+datax : col1 - yearstart
+datay : col3 * daysperyear
+plot
+
+data : /dibom/var/log/ehz/ehz.analyzer.tmp0.txt
+avg  = 1weeks/1days
+step = 1
+type = points
+
+plotx : minpx
+ploty : minpy
+lum   : 0.17
+sat   : 0.08
+hue   : 60
+datax : col1 - yearstart
+datay : col4 * daysperyear
+plot
+
+out   : /run/user/1000/drawehz.bmp
+
+EOF
+
+}
+
+function main()
+{
+	case "$1" in
+		release)
+			./mk release
+			# args | xargs -d \\n echo "./$(basename "$PWD")"
+			args | xargs -d \\n /usr/bin/time -f "%E" "./$(basename "$PWD")"
+			;;
+		*)
+			args | xargs -d \\n ./mk run
+			;;
+	esac
+}
+
+main "$@"
